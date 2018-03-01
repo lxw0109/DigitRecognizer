@@ -1,5 +1,5 @@
 # DigitRecognizer
-kaggle竞赛入门题目[Digit Recognizer](https://www.kaggle.com/c/digit-recognizer/data)不同机器学习/深度学习算法的实现
+Kaggle竞赛入门题目[Digit Recognizer](https://www.kaggle.com/c/digit-recognizer/data)使用多种机器学习和深度学习算法的实现
 
 ## 1. 不同实现方法的得分
 以下各种实现方法的得分是针对相应代码中的参数和网络结构设计的情况下的得分, **此处不表示各种算法本身的性能对比**
