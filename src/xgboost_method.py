@@ -92,5 +92,5 @@ def model_plot():
 
 
 if __name__ == "__main__":
-    # digit_recognizer()
-    model_plot()
+    digit_recognizer()
+    # model_plot()
