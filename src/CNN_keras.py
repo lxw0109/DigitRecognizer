@@ -25,17 +25,18 @@ def data_preparation():
     y = train_df["label"]
     y = np_utils.to_categorical(y)  # shape: (42000, 10)
     X = train_df.iloc[:, 1:]  # <DataFrame>. shape: (42000, 784)
-    X = np.array(X)  # <ndarray>(42000, 784). essential, otherwise "ValueError: Must pass 2-d input" raises in next row.
-    # X = np.reshape(X, (-1, 28, 28))  # NOTE: (42000, 28, 28). 处理成这种形式, 在下面的神经网络中会报如下的错误:
+
+    # X = X.values.reshape(-1, 28, 28)  # NOTE: (42000, 28, 28). 处理成这种形式, 在下面的神经网络中会报如下的错误:
     """
     Error 1: ValueError: Input 0 is incompatible with layer Conv2d_1: expected ndim=4, found ndim=3
     or
     Error 2: ValueError: Error when checking input: expected Conv2d_1_input to have 4 dimensions, but
     got array with shape (29400, 28, 28)
     """
-    X = np.reshape(X, (-1, 28, 28, 1))  # (42000, 28, 28, 1).
+    X = X.values.reshape(-1, 28, 28, 1)  # NO: X.reshape(-1, 28, 28, 1). X: <DataFrame>. X.values: <ndarray>
+    X = X / 255.0    # Normalization(CNN converge faster on [0..1] data than on [0..255].)
     '''
-    # 不用进行scaler, 如果进行scaler内存会爆掉(65G内存都会爆掉)
+    # 不要像下面这样scaler: 内存会爆掉(65G内存都会爆掉)
     for column in X:
         """
         # NOTE: 使用X_train[column] = MinMaxScaler(X_train[column])或
@@ -47,8 +48,8 @@ def data_preparation():
         X.loc[:, column] = MinMaxScaler(X.loc[:, column])
     '''
 
-    # X = X[:1000, :]  # for debug
-    # y = y[:1000, :]  # for debug
+    # X = X[:1000, :]  # DEBUG
+    # y = y[:1000, :]  # DEBUG
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=True, random_state=1)
     # X_train.shape: (29400, 28, 28, 1). X_val.shape: (12600, 28, 28, 1)
     return X_train, X_val, y_train, y_val
@@ -60,12 +61,18 @@ def model_training(input_shape=(28, 28, 1), num_classes=10):
     model.add(Conv2D(64, kernel_size=(3, 3), activation="relu", name="conv2d_2"))
     model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_3"))
     model.add(Dropout(0.25))
+
     model.add(Flatten())
     model.add(Dense(128, activation="relu", name="dense_4"))
     model.add(Dropout(0.25))
     model.add(Dense(num_classes, activation="softmax", name="dense_softmax"))
 
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    """
+    The most important function is the optimizer. This function will iteratively improve parameters(filters kernel
+    values, weights and bias of neurons, ...) in order to minimise the loss. **We could also have used Stochastic
+    Gradient Descent ('sgd') optimizer, but it is slower than RMSprop**.
+    """
     return model
 
 
@@ -90,14 +97,10 @@ if __name__ == "__main__":
     """
 
     test_df = pd.read_csv("../data/input/test.csv")
-    """
-    for column in test_df:
-        test_df[column] = MinMaxScaler(test_df[column])
-    """
-    X_test = np.array(test_df)  # <ndarray>. shape: (12600, 784). essential.
-    # X = np.reshape(X, (-1, 28, 28))  # NOTE: (12600, 28, 28). 处理成这种形式, 传到神经网络中会报错
-    X_test = np.reshape(X_test, (-1, 28, 28, 1))  # (12600, 28, 28, 1).
-    predicted = model.predict(X_test)    # shape: (28000, 10)
+    X_test = test_df.values  # <ndarray>. shape: (12600, 784). essential.
+    X_test = X_test / 255.0    # Normalization
+    X_test = X_test.reshape(-1, 28, 28, 1)  # (28000, 28, 28, 1).
+    predicted = model.predict(X_test)  # shape: (28000, 10)
     # 把categorical数据转为numeric值，得到分类结果
     preds = list()
     row, col = predicted.shape
