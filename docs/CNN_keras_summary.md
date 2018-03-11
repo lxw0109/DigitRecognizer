@@ -1,7 +1,7 @@
 ## Reference
 [Introduction to CNN Keras - 0.997 (top 6%)](https://www.kaggle.com/yassineghouzam/introduction-to-cnn-keras-0-997-top-6)
 
-文中好的句子的摘录  
+## 1.文中好的句子的摘录  
 
 1. 
 > We perform a grayscale normalization to reduce the effect of illumination's differences.   
@@ -72,4 +72,42 @@ Data Augmentation
 > + I did not apply a vertical_flip nor horizontal_flip since it could have lead to misclassify symetrical numbers such as 6 and 9.
 
 
+## 2.ReduceLROnPlateau
+从下面的结果中我们可以看出使用ReduceLROnPlateau还是很有效的
+```
+Epoch 26/100
+ - 28s - loss: 0.0646 - acc: 0.9789 - val_loss: 0.0304 - val_acc: 0.9913
+
+Epoch 00026: ReduceLROnPlateau reducing learning rate to 0.0005000000237487257.
+Epoch 27/100
+ - 28s - loss: 0.0616 - acc: 0.9806 - val_loss: 0.0290 - val_acc: 0.9907
+Epoch 28/100
+ - 28s - loss: 0.0583 - acc: 0.9807 - val_loss: 0.0297 - val_acc: 0.9906
+Epoch 29/100
+ - 28s - loss: 0.0556 - acc: 0.9822 - val_loss: 0.0285 - val_acc: 0.9914
+
+Epoch 00029: ReduceLROnPlateau reducing learning rate to 0.0002500000118743628.
+Epoch 30/100
+ - 28s - loss: 0.0529 - acc: 0.9833 - val_loss: 0.0283 - val_acc: 0.9921
+Epoch 31/100
+ - 28s - loss: 0.0534 - acc: 0.9837 - val_loss: 0.0288 - val_acc: 0.9916
+Epoch 32/100
+ - 28s - loss: 0.0532 - acc: 0.9839 - val_loss: 0.0285 - val_acc: 0.9917
+Epoch 33/100
+ - 28s - loss: 0.0540 - acc: 0.9830 - val_loss: 0.0276 - val_acc: 0.9921
+
+Epoch 00033: ReduceLROnPlateau reducing learning rate to 0.0001250000059371814.
+Epoch 34/100
+ - 28s - loss: 0.0515 - acc: 0.9835 - val_loss: 0.0273 - val_acc: 0.9922
+Epoch 35/100
+ - 28s - loss: 0.0556 - acc: 0.9836 - val_loss: 0.0271 - val_acc: 0.9924
+Epoch 36/100
+ - 28s - loss: 0.0504 - acc: 0.9841 - val_loss: 0.0272 - val_acc: 0.9923
+Epoch 37/100
+ - 28s - loss: 0.0516 - acc: 0.9841 - val_loss: 0.0269 - val_acc: 0.9925
+Epoch 38/100
+ - 28s - loss: 0.0486 - acc: 0.9848 - val_loss: 0.0266 - val_acc: 0.9921
+
+Epoch 00038: ReduceLROnPlateau reducing learning rate to 6.25000029685907e-05.
+```
 
