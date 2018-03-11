@@ -5,7 +5,7 @@
 # Date: 5/30/18 8:50 AM
 
 import itertools
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 
 from keras import Sequential
@@ -54,6 +54,7 @@ def plot_loss_acc_curve(hist_obj):
     plt.show()
 
 
+'''
 def plot_confusion_matrix(cm, classes, normalize=False, title="Confusion matrix", cmap=plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
@@ -78,6 +79,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title="Confusion matrix"
     plt.tight_layout()
     plt.ylabel("True label")
     plt.xlabel("Predicted label")
+'''
 
 
 if __name__ == "__main__":
@@ -86,9 +88,9 @@ if __name__ == "__main__":
     X_train, X_val, y_train, y_val = data_preparation(train_df)
 
     model = build_model()
-    # early_stopping = EarlyStopping(monitor="val_loss", patience=10)
+    early_stopping = EarlyStopping(monitor="val_loss", patience=10)
     BATCH_SIZE = 1024
-    EPOCHS = 2
+    EPOCHS = 100
     """
     hist_obj = model.fit(X_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
                          validation_data=(X_val, y_val), callbacks=[early_stopping])
@@ -98,8 +100,8 @@ if __name__ == "__main__":
     datagen = data_augmentation(X_train)
     hist_obj = model.fit_generator(datagen.flow(X_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
                          validation_data=(X_val, y_val), verbose=2, steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
-                         callbacks=[learning_rate_reduction])
-                         # callbacks=[learning_rate_reduction, early_stopping])
+                         callbacks=[learning_rate_reduction, early_stopping])
+    # callbacks=[learning_rate_reduction])
     # plot_loss_acc_curve(hist_obj)
     model.save("../data/model/cnn.model")
 
@@ -136,6 +138,6 @@ if __name__ == "__main__":
     epochs 28/Validation Loss: 0.04559665244692114/Validation accuracy: 0.9894444444444445
     
     v3.0
-    epochs /Validation Loss: /Validation accuracy: 
+    epochs 80/Validation Loss: 0.026050130864365084/Validation accuracy: 0.9924603174603175
     """
 

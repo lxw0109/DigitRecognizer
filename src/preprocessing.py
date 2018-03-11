@@ -10,9 +10,9 @@ Reference:
 原文中还有动态调整学习率的实现代码
 """
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+# import seaborn as sns
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import np_utils
