@@ -1,5 +1,6 @@
 .idea/
 **/__pycache__/
+redate-settings
 data/input/
 data/output/
 data/model/
