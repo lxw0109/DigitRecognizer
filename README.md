@@ -1,4 +1,4 @@
-# DigitRecognizer_kaggle
+# DigitRecognizer
 kaggle入门竞赛题目[Digit Recognizer](https://www.kaggle.com/c/digit-recognizer/data)实现方法汇总
 
 ## 1. 不同实现方法的得分
