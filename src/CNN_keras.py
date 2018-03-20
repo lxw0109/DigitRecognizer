@@ -72,7 +72,7 @@ def model_training(input_shape=(28, 28, 1), num_classes=10):
 if __name__ == "__main__":
     X_train, X_val, y_train, y_val = data_preparation()
     model = model_training()
-    early_stopping = EarlyStopping(monitor="val_loss", patience=50)
+    early_stopping = EarlyStopping(monitor="val_loss", patience=10)
     hist_obj = model.fit(X_train, y_train, batch_size=1024, epochs=1000, verbose=1, validation_data=(X_val, y_val), callbacks=[early_stopping])
     model.save("../data/model/cnn.model")
 
@@ -115,5 +115,9 @@ if __name__ == "__main__":
     score = model.evaluate(X_val, y_val, verbose=0)    # score: [0.5269775622282991, 0.9260317460695903]
     print("Validation Loss:", score[0])
     print("Validation accuracy:", score[1])
-
+    """
+    epochs 60:
+    Validation Loss: 0.0650922215245861
+    Validation accuracy: 0.988253968216124
+    """
 
