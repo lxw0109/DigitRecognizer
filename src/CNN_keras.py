@@ -23,7 +23,14 @@ def data_preparation():
     y_train = np_utils.to_categorical(y_train)
     X_train = train_df.iloc[:, 1:]
     for column in X_train:
+        """
+        # NOTE: 如果使用X_train[column] = MinMaxScaler(X_train[column])会报下面的警告
+        # A value is trying to be set on a copy of a slice from a DataFrame.
+        # Try using .loc[row_indexer,col_indexer] = value instead
         X_train[column] = MinMaxScaler(X_train[column])
+        """
+        X_train.loc[:, column] = MinMaxScaler(X_train.loc[:, column])
+
 
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, shuffle=True, random_state=1)
     return X_train, X_val, y_train, y_val
