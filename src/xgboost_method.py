@@ -80,8 +80,8 @@ def digit_recognizer():
 def model_plot():
     bst = xgb.Booster({"nthread": 4})  # init model
     bst.load_model("../data/model/xgb.model")  # load data
-    xgb.plot_importance(bst)
-    plt.show()
+    # xgb.plot_importance(bst)
+    # plt.show()
     # To plot the output tree via matplotlib, use plot_tree, specifying the ordinal number of the target tree.
     xgb.plot_tree(bst, num_trees=2)
     plt.show()
