@@ -53,7 +53,7 @@ def digit_recognizer():
         "silent": 0,  # 设置成1则没有运行信息输出，最好是设置为0.
         "eta": 0.01,  # 如同学习率
         "seed": 1000,
-        "nthread": 4,  # cpu 线程数
+        "nthread": 8,  # cpu 线程数
         # "eval_metric": "auc"
     }
     plst = list(params.items())
@@ -63,7 +63,7 @@ def digit_recognizer():
     # 2. 训练模型并保存
     # early_stopping_rounds 当设置的迭代次数较大时，early_stopping_rounds 可在一定的迭代次数内准确率没有提升就停止训练
     model = xgb.train(plst, xgb_train, num_rounds, watchlist, early_stopping_rounds=100)
-    model.save_model("../model/xgb.model")  # 用于存储训练出的模型
+    model.save_model("../data/model/xgb.model")  # 用于存储训练出的模型
     print("best best_ntree_limit", model.best_ntree_limit)
 
     preds = model.predict(xgb_test, ntree_limit=model.best_ntree_limit)
