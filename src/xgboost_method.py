@@ -5,10 +5,12 @@
 # Date: 5/29/18 1:47 PM
 """
 References:
-[xgboost入门与实战(实战调参篇)](https://blog.csdn.net/sb19931201/article/details/52577592)
+1. [xgboost入门与实战(实战调参篇)](https://blog.csdn.net/sb19931201/article/details/52577592)
+2. [Python Package Introduction](https://xgboost.readthedocs.io/en/latest/python/python_intro.html)
 """
 
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import time
@@ -68,12 +70,27 @@ def digit_recognizer():
 
     preds = model.predict(xgb_test, ntree_limit=model.best_ntree_limit)
 
-    np.savetxt('../data/output/xgb_submission.csv', np.c_[range(1, len(test) + 1), preds], delimiter=',',
-               header='ImageId,Label', comments='', fmt='%d')
+    np.savetxt("../data/output/xgb_submission.csv", np.c_[range(1, len(test) + 1), preds], delimiter=",",
+               header="ImageId,Label", comments="", fmt="%d")
 
     cost_time = time.time() - start_time
     print("XGBoost run successfully!\nCost time:{}s".format(cost_time))
 
 
+def model_plot():
+    bst = xgb.Booster({"nthread": 4})  # init model
+    bst.load_model("../data/model/xgb.model")  # load data
+    xgb.plot_importance(bst)
+    plt.show()
+    # To plot the output tree via matplotlib, use plot_tree, specifying the ordinal number of the target tree.
+    xgb.plot_tree(bst, num_trees=2)
+    plt.show()
+    # When using IPython, you can use the to_graphviz function, which converts the target tree to a graphviz instance.
+    # The graphviz instance is automatically rendered in IPython.
+    xgb.to_graphviz(bst, num_trees=2)
+
+
+
 if __name__ == "__main__":
-    digit_recognizer()
+    # digit_recognizer()
+    model_plot()
