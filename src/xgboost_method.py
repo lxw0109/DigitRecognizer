@@ -3,6 +3,10 @@
 # File: xgboost_method.py
 # Author: lxw
 # Date: 5/29/18 1:47 PM
+"""
+References:
+[xgboost入门与实战(实战调参篇)](https://blog.csdn.net/sb19931201/article/details/52577592)
+"""
 
 
 import numpy as np
