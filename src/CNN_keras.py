@@ -4,11 +4,12 @@
 # Author: lxw
 # Date: 5/30/18 8:50 AM
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from keras import Sequential
+from keras.callbacks import EarlyStopping
 from keras.layers import Conv2D
 from keras.layers import Dense
 from keras.layers import Dropout
@@ -71,8 +72,10 @@ def model_training(input_shape=(28, 28, 1), num_classes=10):
 if __name__ == "__main__":
     X_train, X_val, y_train, y_val = data_preparation()
     model = model_training()
-    hist_obj = model.fit(X_train, y_train, batch_size=1024, epochs=1, verbose=1, validation_data=(X_val, y_val))
+    early_stopping = EarlyStopping(monitor="val_loss", patience=50)
+    hist_obj = model.fit(X_train, y_train, batch_size=1024, epochs=1000, verbose=1, validation_data=(X_val, y_val), callbacks=[early_stopping])
     # 绘制训练集和验证集的曲线
+    """
     plt.plot(hist_obj.history["acc"], label="Training Accuracy", color="green", linewidth=2)
     plt.plot(hist_obj.history["loss"], label="Training Loss", color="red", linewidth=1)
     plt.plot(hist_obj.history["val_acc"], label="Validation Accuracy", color="purple", linewidth=2)
@@ -82,6 +85,7 @@ if __name__ == "__main__":
     plt.ylabel("acc-loss")  # 给x, y轴加注释
     plt.legend(loc="upper right")  # 设置图例显示位置
     plt.show()
+    """
 
     test_df = pd.read_csv("../data/input/test.csv")
     """
