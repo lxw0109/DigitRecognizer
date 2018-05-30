@@ -4,6 +4,8 @@
 # Author: lxw
 # Date: 5/30/18 8:50 AM
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from keras import Sequential
@@ -19,33 +21,48 @@ from sklearn.preprocessing import MinMaxScaler
 
 def data_preparation():
     train_df = pd.read_csv("../data/input/train.csv")
-    y_train = train_df["label"]
-    y_train = np_utils.to_categorical(y_train)
-    X_train = train_df.iloc[:, 1:]
-    for column in X_train:
+    y = train_df["label"]
+    y = np_utils.to_categorical(y)  # shape: (42000, 10)
+    X = train_df.iloc[:, 1:]  # <DataFrame>. shape: (42000, 784)
+    X = np.array(X)  # <ndarray>(42000, 784). essential, otherwise "ValueError: Must pass 2-d input" raises in next row.
+    # X = np.reshape(X, (-1, 28, 28))  # NOTE: (42000, 28, 28). 处理成这种形式, 在下面的神经网络中会报如下的错误:
+    """
+    Error 1: ValueError: Input 0 is incompatible with layer Conv2d_1: expected ndim=4, found ndim=3
+    or
+    Error 2: ValueError: Error when checking input: expected Conv2d_1_input to have 4 dimensions, but
+    got array with shape (29400, 28, 28)
+    """
+    X = np.reshape(X, (-1, 28, 28, 1))  # (42000, 28, 28, 1).
+    '''
+    # 不用进行scaler, 如果进行scaler内存会爆掉(65G内存都会爆掉)
+    for column in X:
         """
-        # NOTE: 如果使用X_train[column] = MinMaxScaler(X_train[column])会报下面的警告
+        # NOTE: 使用X_train[column] = MinMaxScaler(X_train[column])或
+        # X.loc[:, column] = MinMaxScaler(X.loc[:, column])会报下面的警告
         # A value is trying to be set on a copy of a slice from a DataFrame.
         # Try using .loc[row_indexer,col_indexer] = value instead
         X_train[column] = MinMaxScaler(X_train[column])
         """
-        X_train.loc[:, column] = MinMaxScaler(X_train.loc[:, column])
+        X.loc[:, column] = MinMaxScaler(X.loc[:, column])
+    '''
 
-
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, shuffle=True, random_state=1)
+    # X = X[:1000, :]  # for debug
+    # y = y[:1000, :]  # for debug
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=True, random_state=1)
+    # X_train.shape: (29400, 28, 28, 1). X_val.shape: (12600, 28, 28, 1)
     return X_train, X_val, y_train, y_val
 
 
-def model_training(input_shape=(28, 28), num_classes=10):
+def model_training(input_shape=(28, 28, 1), num_classes=10):
     model = Sequential()
-    model.add(Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=input_shape))
-    model.add(Conv2D(64, kernel_size=(3, 3), activation="relu"))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=input_shape, name="conv2d_1"))
+    model.add(Conv2D(64, kernel_size=(3, 3), activation="relu", name="conv2d_2"))
+    model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_3"))
     model.add(Dropout(0.25))
     model.add(Flatten())
-    model.add(Dense(128, activation="relu"))
+    model.add(Dense(128, activation="relu", name="dense_4"))
     model.add(Dropout(0.25))
-    model.add(Dense(num_classes, activation="softmax"))
+    model.add(Dense(num_classes, activation="softmax", name="dense_softmax"))
 
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
     return model
@@ -54,14 +71,43 @@ def model_training(input_shape=(28, 28), num_classes=10):
 if __name__ == "__main__":
     X_train, X_val, y_train, y_val = data_preparation()
     model = model_training()
-    model.fit(X_train, y_train, batch_size=128, epochs=10, verbose=1, validation_data=(X_val, y_val))
+    hist_obj = model.fit(X_train, y_train, batch_size=1024, epochs=1, verbose=1, validation_data=(X_val, y_val))
+    # 绘制训练集和验证集的曲线
+    plt.plot(hist_obj.history["acc"], label="Training Accuracy", color="green", linewidth=2)
+    plt.plot(hist_obj.history["loss"], label="Training Loss", color="red", linewidth=1)
+    plt.plot(hist_obj.history["val_acc"], label="Validation Accuracy", color="purple", linewidth=2)
+    plt.plot(hist_obj.history["val_loss"], label="Validation Loss", color="blue", linewidth=1)
+    plt.grid(True)  # 设置网格形式
+    plt.xlabel("epoch")
+    plt.ylabel("acc-loss")  # 给x, y轴加注释
+    plt.legend(loc="upper right")  # 设置图例显示位置
+    plt.show()
 
     test_df = pd.read_csv("../data/input/test.csv")
+    """
     for column in test_df:
         test_df[column] = MinMaxScaler(test_df[column])
-    predicted = model.predict(test_df)
-    print("predict result:", predicted)
-    score = model.evaluate(X_val, y_val, verbose=0)
+    """
+    X_test = np.array(test_df)  # <ndarray>. shape: (12600, 784). essential.
+    # X = np.reshape(X, (-1, 28, 28))  # NOTE: (12600, 28, 28). 处理成这种形式, 传到神经网络中会报错
+    X_test = np.reshape(X_test, (-1, 28, 28, 1))  # (12600, 28, 28, 1).
+    predicted = model.predict(X_test)    # shape: (28000, 10)
+    # 把categorical数据转为numeric值，得到分类结果
+    preds = list()
+    row, col = predicted.shape
+    for i in range(row):
+        max_index = -1
+        max_prop = -1.0
+        for j in range(col):
+            if predicted[i][j] > max_prop:
+                max_index, max_prop = j, predicted[i][j]
+        preds.append(max_index)
+
+    np.savetxt("../data/output/cnn_submission.csv", np.c_[range(1, len(X_test) + 1), preds], delimiter=",",
+               header="ImageId,Label", comments="", fmt="%d")
+
+    score = model.evaluate(X_val, y_val, verbose=0)    # score: [0.5269775622282991, 0.9260317460695903]
     print("Validation Loss:", score[0])
-    print("Validation accuracy:", score[2])
+    print("Validation accuracy:", score[1])
+
 
