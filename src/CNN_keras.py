@@ -74,6 +74,8 @@ if __name__ == "__main__":
     model = model_training()
     early_stopping = EarlyStopping(monitor="val_loss", patience=50)
     hist_obj = model.fit(X_train, y_train, batch_size=1024, epochs=1000, verbose=1, validation_data=(X_val, y_val), callbacks=[early_stopping])
+    model.save("../data/model/cnn.model")
+
     # 绘制训练集和验证集的曲线
     """
     plt.plot(hist_obj.history["acc"], label="Training Accuracy", color="green", linewidth=2)
