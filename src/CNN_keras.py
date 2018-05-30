@@ -72,6 +72,7 @@ if __name__ == "__main__":
     X_train, X_val, y_train, y_val = data_preparation()
     model = model_training()
     hist_obj = model.fit(X_train, y_train, batch_size=1024, epochs=1, verbose=1, validation_data=(X_val, y_val))
+    model.save("../data/model/cnn.model")
     # 绘制训练集和验证集的曲线
     plt.plot(hist_obj.history["acc"], label="Training Accuracy", color="green", linewidth=2)
     plt.plot(hist_obj.history["loss"], label="Training Loss", color="red", linewidth=1)
