@@ -4,61 +4,31 @@
 # Author: lxw
 # Date: 5/30/18 8:50 AM
 
-# import matplotlib.pyplot as plt
+import itertools
+import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from keras import Sequential
 from keras.callbacks import EarlyStopping
+from keras.callbacks import ReduceLROnPlateau
 from keras.layers import Conv2D
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import Flatten
 from keras.layers import MaxPooling2D
-from keras.utils import np_utils
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+
+from sklearn.metrics import confusion_matrix
+
+# self-defined module
+from preprocessing import fetch_data_df
+from preprocessing import data_preparation
+from preprocessing import data_augmentation
 
 
-def data_preparation():
-    train_df = pd.read_csv("../data/input/train.csv")
-    y = train_df["label"]
-    y = np_utils.to_categorical(y)  # shape: (42000, 10)
-    X = train_df.iloc[:, 1:]  # <DataFrame>. shape: (42000, 784)
-
-    # X = X.values.reshape(-1, 28, 28)  # NOTE: (42000, 28, 28). 处理成这种形式, 在下面的神经网络中会报如下的错误:
-    """
-    Error 1: ValueError: Input 0 is incompatible with layer Conv2d_1: expected ndim=4, found ndim=3
-    or
-    Error 2: ValueError: Error when checking input: expected Conv2d_1_input to have 4 dimensions, but
-    got array with shape (29400, 28, 28)
-    """
-    X = X.values.reshape(-1, 28, 28, 1)  # NO: X.reshape(-1, 28, 28, 1). X: <DataFrame>. X.values: <ndarray>
-    X = X / 255.0    # Normalization(CNN converge faster on [0..1] data than on [0..255].)
-    '''
-    # 不要像下面这样scaler: 内存会爆掉(65G内存都会爆掉)
-    for column in X:
-        """
-        # NOTE: 使用X_train[column] = MinMaxScaler(X_train[column])或
-        # X.loc[:, column] = MinMaxScaler(X.loc[:, column])会报下面的警告
-        # A value is trying to be set on a copy of a slice from a DataFrame.
-        # Try using .loc[row_indexer,col_indexer] = value instead
-        X_train[column] = MinMaxScaler(X_train[column])
-        """
-        X.loc[:, column] = MinMaxScaler(X.loc[:, column])
-    '''
-
-    # X = X[:1000, :]  # DEBUG
-    # y = y[:1000, :]  # DEBUG
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=True, random_state=1)
-    # X_train.shape: (29400, 28, 28, 1). X_val.shape: (12600, 28, 28, 1)
-    return X_train, X_val, y_train, y_val
-
-
-def model_training(input_shape=(28, 28, 1), num_classes=10):
+def build_model(input_shape=(28, 28, 1), num_classes=10):
     model = Sequential()
-    model.add(Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=input_shape, name="conv2d_1"))
-    model.add(Conv2D(64, kernel_size=(3, 3), activation="relu", name="conv2d_2"))
+    model.add(Conv2D(32, kernel_size=(3, 3), input_shape=input_shape, padding="Same", activation="relu", name="conv2d_1"))
+    model.add(Conv2D(64, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_2"))
     model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_3"))
     model.add(Dropout(0.25))
 
@@ -68,23 +38,11 @@ def model_training(input_shape=(28, 28, 1), num_classes=10):
     model.add(Dense(num_classes, activation="softmax", name="dense_softmax"))
 
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    """
-    The most important function is the optimizer. This function will iteratively improve parameters(filters kernel
-    values, weights and bias of neurons, ...) in order to minimise the loss. **We could also have used Stochastic
-    Gradient Descent ('sgd') optimizer, but it is slower than RMSprop**.
-    """
     return model
 
 
-if __name__ == "__main__":
-    X_train, X_val, y_train, y_val = data_preparation()
-    model = model_training()
-    early_stopping = EarlyStopping(monitor="val_loss", patience=10)
-    hist_obj = model.fit(X_train, y_train, batch_size=1024, epochs=1000, verbose=1, validation_data=(X_val, y_val), callbacks=[early_stopping])
-    model.save("../data/model/cnn.model")
-
-    # 绘制训练集和验证集的曲线
-    """
+def plot_loss_acc_curve(hist_obj):
+    # 绘制训练集和验证集的loss和accuracy曲线
     plt.plot(hist_obj.history["acc"], label="Training Accuracy", color="green", linewidth=2)
     plt.plot(hist_obj.history["loss"], label="Training Loss", color="red", linewidth=1)
     plt.plot(hist_obj.history["val_acc"], label="Validation Accuracy", color="purple", linewidth=2)
@@ -94,33 +52,90 @@ if __name__ == "__main__":
     plt.ylabel("acc-loss")  # 给x, y轴加注释
     plt.legend(loc="upper right")  # 设置图例显示位置
     plt.show()
-    """
 
-    test_df = pd.read_csv("../data/input/test.csv")
+
+def plot_confusion_matrix(cm, classes, normalize=False, title="Confusion matrix", cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    plt.imshow(cm, interpolation="nearest", cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    if normalize:
+        cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j],
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel("True label")
+    plt.xlabel("Predicted label")
+
+
+if __name__ == "__main__":
+    train_df, test_df = fetch_data_df()
+
+    X_train, X_val, y_train, y_val = data_preparation(train_df)
+
+    model = build_model()
+    # early_stopping = EarlyStopping(monitor="val_loss", patience=10)
+    BATCH_SIZE = 1024
+    EPOCHS = 2
+    """
+    hist_obj = model.fit(X_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
+                         validation_data=(X_val, y_val), callbacks=[early_stopping])
+    """
+    # Set a learning rate annealer
+    learning_rate_reduction = ReduceLROnPlateau(monitor="val_acc", patience=3, verbose=1, factor=0.5, min_lr=0.00001)
+    datagen = data_augmentation(X_train)
+    hist_obj = model.fit_generator(datagen.flow(X_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
+                         validation_data=(X_val, y_val), verbose=2, steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
+                         callbacks=[learning_rate_reduction])
+                         # callbacks=[learning_rate_reduction, early_stopping])
+    # plot_loss_acc_curve(hist_obj)
+    model.save("../data/model/cnn.model")
+
     X_test = test_df.values  # <ndarray>. shape: (12600, 784). essential.
     X_test = X_test / 255.0    # Normalization
     X_test = X_test.reshape(-1, 28, 28, 1)  # (28000, 28, 28, 1).
     predicted = model.predict(X_test)  # shape: (28000, 10)
     # 把categorical数据转为numeric值，得到分类结果
-    preds = list()
-    row, col = predicted.shape
-    for i in range(row):
-        max_index = -1
-        max_prop = -1.0
-        for j in range(col):
-            if predicted[i][j] > max_prop:
-                max_index, max_prop = j, predicted[i][j]
-        preds.append(max_index)
-
-    np.savetxt("../data/output/cnn_submission.csv", np.c_[range(1, len(X_test) + 1), preds], delimiter=",",
+    predicted = np.argmax(predicted, axis=1)
+    np.savetxt("../data/output/cnn_submission.csv", np.c_[range(1, len(X_test) + 1), predicted], delimiter=",",
                header="ImageId,Label", comments="", fmt="%d")
+    """
+    predicted = pd.Series(predicted, name="Label")
+    submission = pd.concat([pd.Series(range(1, 28001), name="ImageId"), predicted], axis=1)
+    submission.to_csv("cnn_submission.csv", index=False)
+    """
 
     score = model.evaluate(X_val, y_val, verbose=0)    # score: [0.5269775622282991, 0.9260317460695903]
     print("Validation Loss:", score[0])
     print("Validation accuracy:", score[1])
+
     """
-    epochs 60:
-    Validation Loss: 0.0650922215245861
-    Validation accuracy: 0.988253968216124
+    y_pred = model.predict(X_val)
+    y_pred_classes = np.argmax(y_pred, axis=1)    # TODO: np.argmax
+    y_true = np.argmax(y_val, axis=1)
+    confusion_mtx = confusion_matrix(y_true, y_pred_classes)
+    plot_confusion_matrix(confusion_mtx, classes=range(10))
+    """
+    """
+    v1.0:
+    epochs 60/Validation Loss: 0.0650922215245861/Validation accuracy: 0.988253968216124
+    
+    v2.0:
+    epochs 28/Validation Loss: 0.04559665244692114/Validation accuracy: 0.9894444444444445
+    
+    v3.0
+    epochs /Validation Loss: /Validation accuracy: 
     """
 
