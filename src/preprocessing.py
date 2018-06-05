@@ -10,9 +10,9 @@ Reference:
 原文中还有动态调整学习率的实现代码
 """
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import pandas as pd
-# import seaborn as sns
+import seaborn as sns
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import np_utils
@@ -38,7 +38,7 @@ def data_analysis(train_df, test_df):
     del train_df
 
     # 1. 查看样本数据分布情况(各个label数据是否均匀分布)
-    g = sns.countplot(Y_train)
+    sns.countplot(Y_train)
     plt.show()
     print(Y_train.value_counts())
 
