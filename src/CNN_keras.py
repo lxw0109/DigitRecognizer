@@ -27,13 +27,18 @@ from preprocessing import data_augmentation
 
 def build_model(input_shape=(28, 28, 1), num_classes=10):
     model = Sequential()
-    model.add(Conv2D(32, kernel_size=(3, 3), input_shape=input_shape, padding="Same", activation="relu", name="conv2d_1"))
-    model.add(Conv2D(64, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_2"))
-    model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_3"))
+    model.add(Conv2D(32, kernel_size=(5, 5), input_shape=input_shape, padding="Same", activation="relu", name="conv2d_1"))
+    model.add(Conv2D(32, kernel_size=(5, 5), padding="Same", activation="relu", name="conv2d_2"))
+    model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_3"))  # strides: default None. If None, it will default to pool_size.
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(64, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_4"))
+    model.add(Conv2D(64, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_5"))
+    model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_6"))
     model.add(Dropout(0.25))
 
     model.add(Flatten())
-    model.add(Dense(128, activation="relu", name="dense_4"))
+    model.add(Dense(128, activation="relu", name="dense_7"))
     model.add(Dropout(0.25))
     model.add(Dense(num_classes, activation="softmax", name="dense_softmax"))
 
@@ -90,13 +95,13 @@ if __name__ == "__main__":
     model = build_model()
     early_stopping = EarlyStopping(monitor="val_loss", patience=10)
     BATCH_SIZE = 1024
-    EPOCHS = 100
+    EPOCHS = 300
     """
     hist_obj = model.fit(X_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
                          validation_data=(X_val, y_val), callbacks=[early_stopping])
     """
     # Set a learning rate annealer
-    learning_rate_reduction = ReduceLROnPlateau(monitor="val_acc", patience=3, verbose=1, factor=0.5, min_lr=0.00001)
+    learning_rate_reduction = ReduceLROnPlateau(monitor="val_loss", patience=5, verbose=1, factor=0.2, min_lr=1e-5)
     datagen = data_augmentation(X_train)
     hist_obj = model.fit_generator(datagen.flow(X_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
                          validation_data=(X_val, y_val), verbose=2, steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
