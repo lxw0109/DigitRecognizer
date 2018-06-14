@@ -12,6 +12,7 @@ kaggle竞赛入门题目[Digit Recognizer](https://www.kaggle.com/c/digit-recogn
 | **CNN v3.0** | 0.99142 | 80 | 与v2.0区别: 1.采用Data Augmentation  2.采用ReduceLROnPlateau(v3.0的两处修改都很有效) |
 | **CNN v4.0** | 0.99428 | 64 | 与v3.0区别: 1.增加网络层数  2.调整ReduceLROnPlateau的monitor="val_acc"->"val_loss", patience=3->5, factor=0.5->0.2 |
 | **CNN v5.0** | 0.99514 | 57 | 与v4.0区别: 进一步增加网络层数 |
+| **CNN v6.0** | 0. |  | 与v5.0区别: 1.进一步增加网络层数 2.增加了ModelCheckpoint 3.history写入文件 |
 
 ## 2. 关于预处理
 拿到数据首先应该做的就是预处理, 包括一些数据统计工作, 例如**统计样本的数据分布情况(label是否分布均匀)**, **查看样本数据缺失值的情况(并填补缺失值)**, **标准化&归一化**, **to_categorical**, **reshape**, **train_test_split**, **数据扩充(data augmentation)**, **特征提取**, **特征选择**, **降维**等
