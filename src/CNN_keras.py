@@ -7,9 +7,12 @@
 import itertools
 # import matplotlib.pyplot as plt
 import numpy as np
+import pickle
+import tensorflow as tf
 
 from keras import Sequential
 from keras.callbacks import EarlyStopping
+from keras.callbacks import ModelCheckpoint
 from keras.callbacks import ReduceLROnPlateau
 from keras.layers import Conv2D
 from keras.layers import Dense
@@ -37,8 +40,18 @@ def build_model(input_shape=(28, 28, 1), num_classes=10):
     model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_6"))
     model.add(Dropout(0.25))
 
+    model.add(Conv2D(128, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_7"))
+    model.add(Conv2D(128, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_8"))
+    model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_9"))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(128, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_10"))
+    model.add(Conv2D(128, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_11"))
+    model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_12"))
+    model.add(Dropout(0.25))
+
     model.add(Flatten())
-    model.add(Dense(128, activation="relu", name="dense_7"))
+    model.add(Dense(256, activation="relu", name="dense_13"))
     model.add(Dropout(0.25))
     model.add(Dense(num_classes, activation="softmax", name="dense_softmax"))
 
@@ -88,27 +101,36 @@ def plot_confusion_matrix(cm, classes, normalize=False, title="Confusion matrix"
 
 
 if __name__ == "__main__":
+    # For reproducibility
+    np.random.seed(1)
+    tf.set_random_seed(1)
+
     train_df, test_df = fetch_data_df()
 
     X_train, X_val, y_train, y_val = data_preparation(train_df)
 
     model = build_model()
-    early_stopping = EarlyStopping(monitor="val_loss", patience=10)
     BATCH_SIZE = 1024
     EPOCHS = 300
+    # Set a learning rate annealer
+    early_stopping = EarlyStopping(monitor="val_loss", patience=10)
+    lr_reduction = ReduceLROnPlateau(monitor="val_loss", patience=5, verbose=1, factor=0.2, min_lr=1e-5)
+    # 检查最好模型: 只要有提升, 就保存一次
+    model_path = "../data/model/best_model_{epoch:02d}_{val_loss:.2f}.hdf5"  # 保存到多个模型文件
+    checkpoint = ModelCheckpoint(filepath=model_path, monitor="val_loss", verbose=1, save_best_only=True, mode="min")
+    datagen = data_augmentation(X_train)
+    hist_obj = model.fit_generator(datagen.flow(X_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
+                         validation_data=(X_val, y_val), verbose=2, steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
+                         callbacks=[early_stopping, lr_reduction, checkpoint])
     """
     hist_obj = model.fit(X_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
                          validation_data=(X_val, y_val), callbacks=[early_stopping])
     """
-    # Set a learning rate annealer
-    learning_rate_reduction = ReduceLROnPlateau(monitor="val_loss", patience=5, verbose=1, factor=0.2, min_lr=1e-5)
-    datagen = data_augmentation(X_train)
-    hist_obj = model.fit_generator(datagen.flow(X_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
-                         validation_data=(X_val, y_val), verbose=2, steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
-                         callbacks=[learning_rate_reduction, early_stopping])
-    # callbacks=[learning_rate_reduction])
+    with open(f"../data/output/history_{BATCH_SIZE}.pkl", "wb") as f:
+        pickle.dump(hist_obj.history, f)
+
     # plot_loss_acc_curve(hist_obj)
-    model.save("../data/model/cnn.model")
+    # model.save("../data/model/cnn.model")
 
     X_test = test_df.values  # <ndarray>. shape: (12600, 784). essential.
     X_test = X_test / 255.0    # Normalization
