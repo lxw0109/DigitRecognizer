@@ -92,8 +92,8 @@ def data_preparation(train_df):
         X.loc[:, column] = MinMaxScaler(X.loc[:, column])
     '''
 
-    # X = X[:1000, :]  # TODO: DEBUG
-    # y = y[:1000, :]  # TODO: DEBUG
+    # X = X[:1000, :]  # DEBUG
+    # y = y[:1000, :]  # DEBUG
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, shuffle=True, random_state=1)
     # X_train.shape: (29400, 28, 28, 1). X_val.shape: (12600, 28, 28, 1)
     return X_train, X_val, y_train, y_val

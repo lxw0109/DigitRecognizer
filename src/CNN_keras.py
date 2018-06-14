@@ -5,7 +5,6 @@
 # Date: 5/30/18 8:50 AM
 
 import itertools
-# import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import tensorflow as tf
@@ -19,6 +18,7 @@ from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import Flatten
 from keras.layers import MaxPooling2D
+from keras.models import load_model
 
 from sklearn.metrics import confusion_matrix
 
@@ -59,12 +59,19 @@ def build_model(input_shape=(28, 28, 1), num_classes=10):
     return model
 
 
-def plot_loss_acc_curve(hist_obj):
+def plot_loss_acc_curve():
+    import matplotlib.pyplot as plt
+    history = None
+    with open("../data/output/history_1024.pkl", "rb") as f:
+        history = pickle.load(f)
+    if not history:
+        return
+
     # 绘制训练集和验证集的loss和accuracy曲线
-    plt.plot(hist_obj.history["acc"], label="Training Accuracy", color="green", linewidth=2)
-    plt.plot(hist_obj.history["loss"], label="Training Loss", color="red", linewidth=1)
-    plt.plot(hist_obj.history["val_acc"], label="Validation Accuracy", color="purple", linewidth=2)
-    plt.plot(hist_obj.history["val_loss"], label="Validation Loss", color="blue", linewidth=1)
+    plt.plot(history["acc"], label="Training Accuracy", color="green", linewidth=2)
+    plt.plot(history["loss"], label="Training Loss", color="red", linewidth=1)
+    plt.plot(history["val_acc"], label="Validation Accuracy", color="purple", linewidth=2)
+    plt.plot(history["val_loss"], label="Validation Loss", color="blue", linewidth=1)
     plt.grid(True)  # 设置网格形式
     plt.xlabel("epoch")
     plt.ylabel("acc-loss")  # 给x, y轴加注释
@@ -100,15 +107,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title="Confusion matrix"
 '''
 
 
-if __name__ == "__main__":
-    # For reproducibility
-    np.random.seed(1)
-    tf.set_random_seed(1)
-
-    train_df, test_df = fetch_data_df()
-
-    X_train, X_val, y_train, y_val = data_preparation(train_df)
-
+def model_train_val(X_train, y_train, X_val, y_val):
     model = build_model()
     BATCH_SIZE = 1024
     EPOCHS = 300
@@ -120,8 +119,8 @@ if __name__ == "__main__":
     checkpoint = ModelCheckpoint(filepath=model_path, monitor="val_loss", verbose=1, save_best_only=True, mode="min")
     datagen = data_augmentation(X_train)
     hist_obj = model.fit_generator(datagen.flow(X_train, y_train, batch_size=BATCH_SIZE), epochs=EPOCHS,
-                         validation_data=(X_val, y_val), verbose=2, steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
-                         callbacks=[early_stopping, lr_reduction, checkpoint])
+                                   validation_data=(X_val, y_val), verbose=2, steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
+                                   callbacks=[early_stopping, lr_reduction, checkpoint])
     """
     hist_obj = model.fit(X_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
                          validation_data=(X_val, y_val), callbacks=[early_stopping])
@@ -129,9 +128,9 @@ if __name__ == "__main__":
     with open(f"../data/output/history_{BATCH_SIZE}.pkl", "wb") as f:
         pickle.dump(hist_obj.history, f)
 
-    # plot_loss_acc_curve(hist_obj)
-    # model.save("../data/model/cnn.model")
 
+def model_predict(test_df, X_val, y_val):
+    model = load_model("../data/model/cnn.model")
     X_test = test_df.values  # <ndarray>. shape: (12600, 784). essential.
     X_test = X_test / 255.0    # Normalization
     X_test = X_test.reshape(-1, 28, 28, 1)  # (28000, 28, 28, 1).
@@ -157,14 +156,18 @@ if __name__ == "__main__":
     confusion_mtx = confusion_matrix(y_true, y_pred_classes)
     plot_confusion_matrix(confusion_mtx, classes=range(10))
     """
-    """
-    v1.0:
-    epochs 60/Validation Loss: 0.0650922215245861/Validation accuracy: 0.988253968216124
-    
-    v2.0:
-    epochs 28/Validation Loss: 0.04559665244692114/Validation accuracy: 0.9894444444444445
-    
-    v3.0
-    epochs 80/Validation Loss: 0.026050130864365084/Validation accuracy: 0.9924603174603175
-    """
+
+
+if __name__ == "__main__":
+    # For reproducibility
+    np.random.seed(1)
+    tf.set_random_seed(1)
+
+    train_df, test_df = fetch_data_df()
+    X_train, X_val, y_train, y_val = data_preparation(train_df)
+    # model_train_val(X_train, y_train, X_val, y_val)
+
+    plot_loss_acc_curve()
+
+    model_predict(test_df, X_val, y_val)
 
