@@ -68,9 +68,9 @@ def plot_loss_acc_curve():
         return
 
     # 绘制训练集和验证集的loss和accuracy曲线
-    plt.plot(history["acc"], label="Training Accuracy", color="green", linewidth=2)
+    plt.plot(history["acc"], label="Training Accuracy", color="green", linewidth=1)
     plt.plot(history["loss"], label="Training Loss", color="red", linewidth=1)
-    plt.plot(history["val_acc"], label="Validation Accuracy", color="purple", linewidth=2)
+    plt.plot(history["val_acc"], label="Validation Accuracy", color="purple", linewidth=1)
     plt.plot(history["val_loss"], label="Validation Loss", color="blue", linewidth=1)
     plt.grid(True)  # 设置网格形式
     plt.xlabel("epoch")
@@ -165,9 +165,9 @@ if __name__ == "__main__":
 
     train_df, test_df = fetch_data_df()
     X_train, X_val, y_train, y_val = data_preparation(train_df)
-    # model_train_val(X_train, y_train, X_val, y_val)
+    model_train_val(X_train, y_train, X_val, y_val)
 
     # plot_loss_acc_curve()
 
-    model_predict(test_df, X_val, y_val)
+    # model_predict(test_df, X_val, y_val)
 
