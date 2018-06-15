@@ -35,8 +35,8 @@ def build_model(input_shape=(28, 28, 1), num_classes=10):
     model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_3"))  # strides: default None. If None, it will default to pool_size.
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(64, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_4"))
-    model.add(Conv2D(64, kernel_size=(3, 3), padding="Same", activation="relu", name="conv2d_5"))
+    model.add(Conv2D(64, kernel_size=(5, 5), padding="Same", activation="relu", name="conv2d_4"))
+    model.add(Conv2D(64, kernel_size=(5, 5), padding="Same", activation="relu", name="conv2d_5"))
     model.add(MaxPooling2D(pool_size=(2, 2), name="pooling_6"))
     model.add(Dropout(0.25))
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     X_train, X_val, y_train, y_val = data_preparation(train_df)
     # model_train_val(X_train, y_train, X_val, y_val)
 
-    plot_loss_acc_curve()
+    # plot_loss_acc_curve()
 
     model_predict(test_df, X_val, y_val)
 
