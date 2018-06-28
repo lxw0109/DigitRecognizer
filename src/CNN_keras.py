@@ -151,7 +151,7 @@ def model_predict(test_df, X_val, y_val):
 
     """
     y_pred = model.predict(X_val)
-    y_pred_classes = np.argmax(y_pred, axis=1)    # TODO: np.argmax
+    y_pred_classes = np.argmax(y_pred, axis=1)
     y_true = np.argmax(y_val, axis=1)
     confusion_mtx = confusion_matrix(y_true, y_pred_classes)
     plot_confusion_matrix(confusion_mtx, classes=range(10))
