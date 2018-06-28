@@ -10,7 +10,6 @@ References:
 """
 
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import time
@@ -78,6 +77,7 @@ def digit_recognizer():
 
 
 def model_plot():
+    import matplotlib.pyplot as plt
     bst = xgb.Booster({"nthread": 4})  # init model
     bst.load_model("../data/model/xgb.model")  # load data
     # xgb.plot_importance(bst)
